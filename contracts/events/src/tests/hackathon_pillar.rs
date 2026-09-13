@@ -199,7 +199,9 @@ fn resubmit_keeps_original_timestamp_and_updates_uri() {
     let uri_a = String::from_str(&ctx.env, "ipfs://Qm.../v1.json");
     let op_a = BytesN::random(&ctx.env);
     ctx.events.submit(&id, &ctx.applicant, &uri_a, &op_a);
-    let first_time = ctx.events.get_submission(&id, &ctx.applicant).submitted_at;
+    let first = ctx.events.get_submission(&id, &ctx.applicant);
+    assert_eq!(first.submitted_at, ctx.env.ledger().timestamp());
+    assert_eq!(first.updated_at, ctx.env.ledger().timestamp());
 
     let uri_b = String::from_str(&ctx.env, "ipfs://Qm.../v2.json");
     let op_b = BytesN::random(&ctx.env);
@@ -207,7 +209,34 @@ fn resubmit_keeps_original_timestamp_and_updates_uri() {
 
     let second = ctx.events.get_submission(&id, &ctx.applicant);
     assert_eq!(second.content_uri, uri_b);
-    assert_eq!(second.submitted_at, first_time);
+    assert_eq!(second.submitted_at, first.submitted_at);
+    assert_eq!(second.updated_at, ctx.env.ledger().timestamp());
+}
+
+#[test]
+fn submit_and_withdraw_after_selection_rejected() {
+    let ctx = setup();
+    let id = create_hackathon(&ctx);
+
+    let uri = String::from_str(&ctx.env, "ipfs://Qm.../v1.json");
+    let op = BytesN::random(&ctx.env);
+    ctx.events.submit(&id, &ctx.applicant, &uri, &op);
+
+    let winners = soroban_sdk::vec![
+        &ctx.env,
+        WinnerSpec {
+            recipient: ctx.applicant.clone(),
+            position: 1,
+            reputation_bump: 0,
+        },
+    ];
+    ctx.events.select_winners(&id, &winners, &BytesN::random(&ctx.env));
+
+    let res = ctx.events.try_submit(&id, &ctx.applicant, &uri, &BytesN::random(&ctx.env));
+    assert_eq!(res, Err(Ok(Error::WinnersAlreadySelected)));
+
+    let res_w = ctx.events.try_withdraw_submission(&id, &ctx.applicant, &BytesN::random(&ctx.env));
+    assert_eq!(res_w, Err(Ok(Error::WinnersAlreadySelected)));
 }
 
 #[test]
