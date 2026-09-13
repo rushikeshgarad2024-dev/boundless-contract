@@ -582,7 +582,7 @@ pub fn submit(
         applicant: applicant.clone(),
         content_uri: content_uri.clone(),
         submitted_at,
-        updated_at: now,
+        updated_at: Some(now),
     };
     storage::set_submission(env, event_id, &applicant, &submission);
 
