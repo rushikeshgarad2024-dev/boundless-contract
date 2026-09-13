@@ -201,7 +201,7 @@ fn resubmit_keeps_original_timestamp_and_updates_uri() {
     ctx.events.submit(&id, &ctx.applicant, &uri_a, &op_a);
     let first = ctx.events.get_submission(&id, &ctx.applicant);
     assert_eq!(first.submitted_at, ctx.env.ledger().timestamp());
-    assert_eq!(first.updated_at, ctx.env.ledger().timestamp());
+    assert_eq!(first.updated_at, Some(ctx.env.ledger().timestamp()));
 
     let uri_b = String::from_str(&ctx.env, "ipfs://Qm.../v2.json");
     let op_b = BytesN::random(&ctx.env);
@@ -210,7 +210,7 @@ fn resubmit_keeps_original_timestamp_and_updates_uri() {
     let second = ctx.events.get_submission(&id, &ctx.applicant);
     assert_eq!(second.content_uri, uri_b);
     assert_eq!(second.submitted_at, first.submitted_at);
-    assert_eq!(second.updated_at, ctx.env.ledger().timestamp());
+    assert_eq!(second.updated_at, Some(ctx.env.ledger().timestamp()));
 }
 
 #[test]
