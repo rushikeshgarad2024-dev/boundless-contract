@@ -1077,6 +1077,22 @@ fn manager_can_be_rotated_via_propose_accept() {
 }
 
 #[test]
+fn propose_manager_emits_cancellation_when_replacing_pending_proposal() {
+    let ctx = setup();
+    let manager1 = Address::generate(&ctx.env);
+    let id = create_bounty_with_manager(&ctx, &manager1);
+    assert!(ctx.events.get_pending_manager(&id).is_some());
+
+    let manager2 = Address::generate(&ctx.env);
+    ctx.events.propose_manager(&id, &manager2);
+    let pending = ctx.events.get_pending_manager(&id).unwrap();
+    assert_eq!(pending.target, manager2);
+
+    ctx.events.accept_manager(&id);
+    assert_eq!(ctx.events.get_manager(&id), manager2);
+}
+
+#[test]
 fn cancel_pending_manager_vetoes_a_proposal() {
     let ctx = setup();
     let attacker = Address::generate(&ctx.env);
